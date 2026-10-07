@@ -10,9 +10,16 @@ export async function api(path, options = {}) {
     ...options,
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf, ...options.headers },
   });
-  const data = await response.json();
+  let data = null;
+  try {
+    data = await response.json();
+  } catch (parseError) {
+    const error = new Error(`Сервер вернул не-JSON ответ (HTTP ${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
   if (!response.ok) {
-    const error = new Error(data.message || `HTTP ${response.status}`);
+    const error = new Error((data && data.message) || `HTTP ${response.status}`);
     error.status = response.status;
     throw error;
   }
