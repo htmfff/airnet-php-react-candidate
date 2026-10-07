@@ -48,13 +48,16 @@ if (preg_match('~^/api/tickets/([1-9][0-9]*)$~', $path, $matches) && $method ===
     respond(200, array('ticket' => $ticket, 'history' => $repository->history($id)));
 }
 if (preg_match('~^/api/tickets/([1-9][0-9]*)/source$~', $path, $matches) && $method === 'POST') {
+    requirePermission($employee, 'FUNC_TICKETS_SOURCE_EDIT');
     requireCsrf();
+    $id = (int) $matches[1];
+    $repository->changeableTicket($id);
     $body = requestBody();
-    $sourceId = isset($body['source_id']) ? $body['source_id'] : null;
+    $sourceId = array_key_exists('source_id', $body) ? $body['source_id'] : null;
     if (!is_int($sourceId) || $sourceId <= 0) {
         respond(400, array('error' => 'invalid_source', 'message' => 'Выберите источник из справочника'));
     }
-    $ticket = $repository->changeSource((int) $matches[1], $sourceId, $employee);
-    respond(200, array('ticket' => $ticket, 'history' => $repository->history($ticket['id'])));
+    $ticket = $repository->changeSource($id, $sourceId, $employee);
+    respond(200, array('ticket' => $ticket, 'history' => $repository->history($id)));
 }
 respond(404, array('error' => 'not_found', 'message' => 'Маршрут не найден'));
